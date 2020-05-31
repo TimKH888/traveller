@@ -1,6 +1,5 @@
 import requests
 
-
 city_info_headers = {
     'x-rapidapi-host': "tripadvisor1.p.rapidapi.com",
     'x-rapidapi-key': "d4670f4573mshca492fc0bd3310ap11c9a1jsn2c70ee09337e"
@@ -53,6 +52,42 @@ def getCityRestaurants(c_id):
     return c_restaurants
 
 
+def getCityAttractions(c_id):
+    city_attractions_url = "https://tripadvisor1.p.rapidapi.com/attractions/list"
+    city_attractions_query = {"location_id": c_id}
+    city_attractions_response = requests.request("GET", city_attractions_url, headers=city_info_headers,
+                                                 params=city_attractions_query)
+    c_attractions = []
+    for attraction in city_attractions_response.json()["data"]:
+        if "name" in attraction.keys():
+            c_attractions.append({
+                "name": attraction["name"],
+                "number_of_reviews": attraction["num_reviews"],
+                "photo": attraction["photo"]["images"]["original"]["url"],
+                "rating": attraction["rating"],
+                "description": attraction["description"],
+                "web_site_url": attraction["web_url"]
+            })
+    return c_attractions
+
+
+def getCityHotels(c_id):
+    city_hotels_url = "https://tripadvisor1.p.rapidapi.com/hotels/list"
+    city_hotels_query = {"location_id": c_id}
+    city_hotels_response = requests.request("GET", city_hotels_url, headers=city_info_headers, params=city_hotels_query)
+    c_hotels = []
+    for hotel in city_hotels_response.json()["data"]:
+        if "name" in hotel.keys():
+            c_hotels.append({
+                "name": hotel["name"],
+                "number_of_reviews": hotel["num_reviews"],
+                "photo": hotel["photo"]["images"]["original"]["url"],
+                "rating": hotel["rating"],
+                "price": hotel["price"]
+            })
+    return c_hotels
+
+
 def mainMenu():
     city_name = input("Enter a city name or \"exit\": ").strip().lower()
     if city_name == "exit":
@@ -100,11 +135,26 @@ def cityMenu(c_name, c_id, c_photo_link):
         cityMenu(c_name, c_id, c_photo_link)
     elif option == "attractions":
         print("Loading...\n")
-
+        city_attractions = getCityAttractions(c_id)
+        print("The list of attractions in this city:")
+        for attraction in city_attractions:
+            print("Name: " + attraction["name"] + "\n"
+                  "Number of reviews: " + str(attraction["number_of_reviews"]) + "\n"
+                  "Photo: " + attraction["photo"] + "\n"
+                  "Rating: " + str(attraction["rating"]) + "\n"
+                  "Description: " + attraction["description"] + "\n"
+                  "Web site: " + attraction["web_site_url"] + "\n")
         cityMenu(c_name, c_id, c_photo_link)
     elif option == "hotels":
         print("Loading...\n")
-
+        city_hotels = getCityHotels(c_id)
+        print("The list of hotels in this city:")
+        for hotel in city_hotels:
+            print("Name: " + hotel["name"] + "\n"
+                  "Number of reviews: " + str(hotel["number_of_reviews"]) + "\n"
+                  "Photo: " + hotel["photo"] + "\n"
+                  "Rating: " + str(hotel["rating"]) + "\n"
+                  "Price: " + hotel["price"] + "\n")
         cityMenu(c_name, c_id, c_photo_link)
     elif option == "back":
         mainMenu()
