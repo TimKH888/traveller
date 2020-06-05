@@ -7,14 +7,18 @@ city_info_headers = {
 
 
 def getCityIdAndPhoto(c_name):
-    city_id_url = f"https://tripadvisor1.p.rapidapi.com/locations/search"
+    city_id_url = "https://tripadvisor1.p.rapidapi.com/locations/search"
     city_info_query = {"query": c_name}
-    city_id_response = requests.request("GET", city_id_url, headers=city_info_headers, params=city_info_query)
-    if city_id_response.json()["data"][0]["result_type"] == "geos":
-        c_id = city_id_response.json()["data"][0]["result_object"]["location_id"]
-        c_photo_link = city_id_response.json()["data"][0]["result_object"]["photo"]["images"]["original"]["url"]
-        return c_id, c_photo_link
-    else:
+    city_id_response = requests.get(city_id_url, headers=city_info_headers, params=city_info_query)
+    try:
+        if city_id_response.json()["data"][0]["result_type"] == "geos":
+            c_id = city_id_response.json()["data"][0]["result_object"]["location_id"]
+            c_photo_link = city_id_response.json()["data"][0]["result_object"]["photo"]["images"]["original"]["url"]
+            return c_id, c_photo_link
+        else:
+            print("There is no information for this city\n")
+            mainMenu()
+    except IndexError:
         print("There is no information for this city\n")
         mainMenu()
 
@@ -22,7 +26,7 @@ def getCityIdAndPhoto(c_name):
 def getWeatherInfo(c_name):
     weather_key = "9a65d9b34d2d2d7041856453c1c7c505"
     weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={c_name}&appid={weather_key}"
-    weather_response = requests.request("GET", weather_url)
+    weather_response = requests.get(weather_url)
     weather_info = {
         "weather_type": weather_response.json()["weather"][0]["main"],
         "temperature": weather_response.json()["main"]["temp"],
@@ -36,8 +40,8 @@ def getWeatherInfo(c_name):
 def getCityRestaurants(c_id):
     city_restaurants_url = "https://tripadvisor1.p.rapidapi.com/restaurants/list"
     city_restaurants_query = {"location_id": c_id}
-    city_restaurants_response = requests.request("GET", city_restaurants_url, headers=city_info_headers,
-                                                 params=city_restaurants_query)
+    city_restaurants_response = requests.get(city_restaurants_url, headers=city_info_headers,
+                                             params=city_restaurants_query)
     c_restaurants = []
     for restaurant in city_restaurants_response.json()["data"]:
         if "name" in restaurant.keys():
@@ -55,8 +59,8 @@ def getCityRestaurants(c_id):
 def getCityAttractions(c_id):
     city_attractions_url = "https://tripadvisor1.p.rapidapi.com/attractions/list"
     city_attractions_query = {"location_id": c_id}
-    city_attractions_response = requests.request("GET", city_attractions_url, headers=city_info_headers,
-                                                 params=city_attractions_query)
+    city_attractions_response = requests.get(city_attractions_url, headers=city_info_headers,
+                                             params=city_attractions_query)
     c_attractions = []
     for attraction in city_attractions_response.json()["data"]:
         if "name" in attraction.keys():
@@ -74,7 +78,7 @@ def getCityAttractions(c_id):
 def getCityHotels(c_id):
     city_hotels_url = "https://tripadvisor1.p.rapidapi.com/hotels/list"
     city_hotels_query = {"location_id": c_id}
-    city_hotels_response = requests.request("GET", city_hotels_url, headers=city_info_headers, params=city_hotels_query)
+    city_hotels_response = requests.get(city_hotels_url, headers=city_info_headers, params=city_hotels_query)
     c_hotels = []
     for hotel in city_hotels_response.json()["data"]:
         if "name" in hotel.keys():
@@ -99,67 +103,71 @@ def mainMenu():
 
 
 def cityMenu(c_name, c_id, c_photo_link):
-    print("Options:\n"
-          "-City photo\n"
-          "-Weather\n"
-          "-Restaurants\n"
-          "-Attractions\n"
-          "-Hotels\n"
-          "-Back")
-    option = input("Enter an option: ").strip().lower()
-    print()
-    if option == "city photo":
-        print(f"The photo of the city: {c_photo_link}\n")
-        cityMenu(c_name, c_id, c_photo_link)
-    elif option == "weather":
-        print("Loading...\n")
-        city_weather_info = getWeatherInfo(c_name)
-        print("Weather information:\n"
-              "Weather: " + city_weather_info["weather_type"] + "\n"
-              "Temperature: " + str(city_weather_info["temperature"]) + "\n"
-              "Temperature feels like: " + str(city_weather_info["temperature_feels_like"]) + "\n"
-              "Pressure: " + str(city_weather_info["pressure"]) + "\n"
-              "Humidity: " + str(city_weather_info["humidity"]) + "\n")
-        cityMenu(c_name, c_id, c_photo_link)
-    elif option == "restaurants":
-        print("Loading...\n")
-        city_restaurants = getCityRestaurants(c_id)
-        print("The list of restaurants in this city:")
-        for restaurant in city_restaurants:
-            print("Name: " + restaurant["name"] + "\n"
-                  "Number of reviews: " + str(restaurant["number_of_reviews"]) + "\n"
-                  "Photo: " + restaurant["photo"] + "\n"
-                  "Rating: " + str(restaurant["rating"]) + "\n"
-                  "Description: " + restaurant["description"] + "\n"
-                  "Web site: " + restaurant["web_site_url"] + "\n")
-        cityMenu(c_name, c_id, c_photo_link)
-    elif option == "attractions":
-        print("Loading...\n")
-        city_attractions = getCityAttractions(c_id)
-        print("The list of attractions in this city:")
-        for attraction in city_attractions:
-            print("Name: " + attraction["name"] + "\n"
-                  "Number of reviews: " + str(attraction["number_of_reviews"]) + "\n"
-                  "Photo: " + attraction["photo"] + "\n"
-                  "Rating: " + str(attraction["rating"]) + "\n"
-                  "Description: " + attraction["description"] + "\n"
-                  "Web site: " + attraction["web_site_url"] + "\n")
-        cityMenu(c_name, c_id, c_photo_link)
-    elif option == "hotels":
-        print("Loading...\n")
-        city_hotels = getCityHotels(c_id)
-        print("The list of hotels in this city:")
-        for hotel in city_hotels:
-            print("Name: " + hotel["name"] + "\n"
-                  "Number of reviews: " + str(hotel["number_of_reviews"]) + "\n"
-                  "Photo: " + hotel["photo"] + "\n"
-                  "Rating: " + str(hotel["rating"]) + "\n"
-                  "Price: " + hotel["price"] + "\n")
-        cityMenu(c_name, c_id, c_photo_link)
-    elif option == "back":
-        mainMenu()
-    else:
-        print("There is no such option\n")
+    try:
+        print("Options:\n"
+              "1-City photo\n"
+              "2-Weather\n"
+              "3-Restaurants\n"
+              "4-Attractions\n"
+              "5-Hotels\n"
+              "0-Back")
+        option = int(input("Enter an option number: "))
+        print()
+        if option == 1:
+            print(f"The photo of the city: {c_photo_link}\n")
+            cityMenu(c_name, c_id, c_photo_link)
+        elif option == 2:
+            print("Loading...\n")
+            city_weather_info = getWeatherInfo(c_name)
+            print("Weather information:\n"
+                  "Weather: " + city_weather_info["weather_type"] + "\n"
+                  "Temperature: " + str(city_weather_info["temperature"]) + "\n"
+                  "Temperature feels like: " + str(city_weather_info["temperature_feels_like"]) + "\n"
+                  "Pressure: " + str(city_weather_info["pressure"]) + "\n"
+                  "Humidity: " + str(city_weather_info["humidity"]) + "\n")
+            cityMenu(c_name, c_id, c_photo_link)
+        elif option == 3:
+            print("Loading...\n")
+            city_restaurants = getCityRestaurants(c_id)
+            print("The list of restaurants in this city:\n")
+            for restaurant in city_restaurants:
+                print("Name: " + restaurant["name"] + "\n"
+                      "Number of reviews: " + str(restaurant["number_of_reviews"]) + "\n"
+                      "Photo: " + restaurant["photo"] + "\n"
+                      "Rating: " + str(restaurant["rating"]) + "\n"
+                      "Description: " + restaurant["description"] + "\n"
+                      "Web site: " + restaurant["web_site_url"] + "\n")
+            cityMenu(c_name, c_id, c_photo_link)
+        elif option == 4:
+            print("Loading...\n")
+            city_attractions = getCityAttractions(c_id)
+            print("The list of attractions in this city:")
+            for attraction in city_attractions:
+                print("Name: " + attraction["name"] + "\n"
+                      "Number of reviews: " + str(attraction["number_of_reviews"]) + "\n"
+                      "Photo: " + attraction["photo"] + "\n"
+                      "Rating: " + str(attraction["rating"]) + "\n"
+                      "Description: " + attraction["description"] + "\n"
+                      "Web site: " + attraction["web_site_url"] + "\n")
+            cityMenu(c_name, c_id, c_photo_link)
+        elif option == 5:
+            print("Loading...\n")
+            city_hotels = getCityHotels(c_id)
+            print("The list of hotels in this city:")
+            for hotel in city_hotels:
+                print("Name: " + hotel["name"] + "\n"
+                      "Number of reviews: " + str(hotel["number_of_reviews"]) + "\n"
+                      "Photo: " + hotel["photo"] + "\n"
+                      "Rating: " + str(hotel["rating"]) + "\n"
+                      "Price: " + hotel["price"] + "\n")
+            cityMenu(c_name, c_id, c_photo_link)
+        elif option == 0:
+            mainMenu()
+        else:
+            print("There is no such option\n")
+            cityMenu(c_name, c_id, c_photo_link)
+    except ValueError:
+        print("\nInput error\n")
         cityMenu(c_name, c_id, c_photo_link)
 
 
